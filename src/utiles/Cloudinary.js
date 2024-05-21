@@ -20,6 +20,7 @@ const uploadOncloudinary = async (localFilePath) => {
     return null; //remove the temporarly files
   }
 };
+export { uploadOncloudinary };
 // const uploadResult = await cloudinary.uploader
 //   .upload(
 //     "https://res.cloudinary.com/demo/image/upload/getting-started/shoes.jpg",
