@@ -3,9 +3,11 @@ import { ApiError } from "../utiles/ApiError.js";
 import { User } from "../models/user.model.js";
 import { uploadOncloudinary } from "../utiles/Cloudinary.js";
 import { ApiResponse } from "../utiles/ApiResponse.js";
+import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 const registerUser = asyncHandler(async (req, res) => {
   const { fullname, email, username, password } = req.body;
-  console.log("email :", email);
+  // console.log("email :", email);
   if (
     [fullname, email, username, password].some((feild) => feild?.trim() === "")
   ) {
@@ -20,16 +22,32 @@ const registerUser = asyncHandler(async (req, res) => {
   }
   const avatarlocalpath = req.files?.avatar[0]?.path;
   const coverImageLocalPath = req.files?.avatar[0]?.path;
+  // let avatarlocalpath;
+  // if (
+  //   req.files &&
+  //   Array.isArray(req.files.avatar) &&
+  //   req.files.avatar.length > 0
+  // ) {
+  //   avatarlocalpath = req.files.avatar[0].path;
+  // }
+  // let coverImageLocalPath;
+  // if (
+  //   req.files &&
+  //   Array.isArray(req.files.coverImage) &&
+  //   req.files.coverImage.length > 0
+  // ) {
+  //   coverImageLocalPath = req.files.coverImage[0].path;
+  // }
 
   if (!avatarlocalpath) {
-    throw new ApiError(400, "avatar is required");
+    throw new ApiError(400, "avatar file  is required");
   }
 
   const avatar = await uploadOncloudinary(avatarlocalpath);
   const coverImage = await uploadOncloudinary.apply(coverImageLocalPath);
 
   if (!avatar) {
-    throw new ApiError(400, "avatar is required");
+    throw new ApiError(400, "avatar file is required");
   }
   const user = await User.create({
     fullname,
