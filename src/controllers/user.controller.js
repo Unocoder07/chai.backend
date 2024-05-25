@@ -5,6 +5,9 @@ import { uploadOncloudinary } from "../utiles/Cloudinary.js";
 import { ApiResponse } from "../utiles/ApiResponse.js";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
+import bcrypt from "bcrypt";
+import { stringify } from "flatted";
+import { MongoClient } from "mongodb";
 const generateAccessAndRefreshToken = async (userId) => {
   try {
     const user = await User.findById(userId);
@@ -12,11 +15,23 @@ const generateAccessAndRefreshToken = async (userId) => {
     const refreshToken = user.generateRefreshToken();
     user.refreshToken = refreshToken;
     await user.save({ validateBeforeSave: false });
+    return { accessToken, refreshToken };
   } catch (error) {
     throw new ApiError(400, "something went wrong");
   }
-  return { accessToken, refreshToken };
 };
+function getCircularReplacer() {
+  const seen = new WeakSet();
+  return (key, value) => {
+    if (typeof value === "object" && value !== null) {
+      if (seen.has(value)) {
+        return;
+      }
+      seen.add(value);
+    }
+    return value;
+  };
+}
 const registerUser = asyncHandler(async (req, res) => {
   const { fullname, email, username, password } = req.body;
   // console.log("email :", email);
@@ -40,10 +55,8 @@ const registerUser = asyncHandler(async (req, res) => {
 
   const avatar = await uploadOncloudinary(avatarlocalpath);
   const coverImage = await uploadOncloudinary(coverImageLocalPath);
-  // const coverImage = coverImageLocalPath
-  //   ? await uploadOncloudinary(coverImageLocalPath)
+
   let encryptedPassword = await bcrypt.hash(password, 10);
-  //   : null;
   if (!avatar) {
     throw new ApiError(400, "avatar file is required");
   }
@@ -106,7 +119,7 @@ const loginUser = asyncHandler(async (req, res) => {
       new ApiResponse(
         200,
         {
-          user: loggedinUser,
+          user: JSON.parse(JSON.stringify(loggedinUser, getCircularReplacer())),
           accessToken,
           refreshToken,
         },
